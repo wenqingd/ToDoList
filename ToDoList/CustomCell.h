@@ -9,14 +9,15 @@
 #import <UIKit/UIKit.h>
 
 @class CustomCell;
-@protocol CustomCellDelegate
--(void) customCell:(CustomCell*)cell textFieldReturn: (UITextField *)text;
-@end
 
+@protocol CustomCellDelegate <NSObject>
+
+- (void)customCell:(CustomCell*)cell textFieldReturn:(UITextField *)text;
+
+@end
 
 @interface CustomCell : UITableViewCell <UITextFieldDelegate>{
 
-    
 }
 
 @property (nonatomic, weak) IBOutlet UITextField *toDoItem;

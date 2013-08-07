@@ -26,7 +26,6 @@
 {
     [super setSelected:selected animated:animated];
 
-    // Configure the view for the selected state
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField
@@ -34,7 +33,7 @@
     UITextField *copyTest = [[UITextField alloc] init];
     copyTest = textField;
     
-    if (delegate ){//)&& [delegate respondsToSelector:@selector(customCell: textFieldShouldReturn:)]) {
+    if ([delegate respondsToSelector:@selector(customCell:textFieldReturn:)]) {
         [delegate customCell:self textFieldReturn:textField];
     }
     textField.text = @"";

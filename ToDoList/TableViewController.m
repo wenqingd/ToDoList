@@ -13,8 +13,9 @@ BOOL enableAddItem = YES;
 
 @interface TableViewController ()
 
-@property (nonatomic, retain) NSMutableArray *list;
-
+@property (nonatomic, strong) NSMutableArray *list;
+@property (nonatomic, strong) NSString *filePath;
+@property (nonatomic, strong) NSString *documentsDirectory;
 @end
 
 @implementation TableViewController
@@ -25,6 +26,11 @@ BOOL enableAddItem = YES;
     if (self) {
         // Custom initialization
     }
+    _list = [[NSMutableArray alloc] init];
+    
+    NSArray *path = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    _documentsDirectory = [path objectAtIndex:0];
+    _filePath =  [_documentsDirectory stringByAppendingPathComponent:@"myToDoList"];
     return self;
 }
 
@@ -32,22 +38,15 @@ BOOL enableAddItem = YES;
 {
     [super viewDidLoad];
     self.title = @"To Do List";
-    UIBarButtonItem *editButton = [[UIBarButtonItem alloc]
-                                   initWithTitle:@"Edit"
-                                   style:UIBarButtonItemStyleBordered
-                                   target:self
-                                  action:@selector(editItem)];
-    self.navigationItem.leftBarButtonItem = editButton;
-    
+    self.navigationItem.leftBarButtonItem = self.editButtonItem;
     UIBarButtonItem *addButton = [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(addItem)];
     self.navigationItem.rightBarButtonItem = addButton;
-
-    _list = [[NSMutableArray alloc] init];
- //   self.toDoList.delegate = self;
+    BOOL fileExists = [[NSFileManager defaultManager] fileExistsAtPath:_filePath];
+    if (fileExists) {
+        _list = [NSKeyedUnarchiver unarchiveObjectWithFile:_filePath];
+    }
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
-    
-    
 
     // Uncomment the following line to preserve selection between presentations.
     // self.clearsSelectionOnViewWillAppear = NO;
@@ -61,19 +60,13 @@ BOOL enableAddItem = YES;
 {
     [self.view endEditing:YES];
     [_list removeObjectAtIndex:0];
-    if ([textField.text length]>0) {
+    if ([textField.text length] > 0) {
         [_list insertObject:textField.text atIndex:0];
     }
-    
     [[self tableView] reloadData];
     enableAddItem = YES;
+    [NSKeyedArchiver archiveRootObject:_list toFile:_filePath];
      
-}
-
--(void)editItem
-{
-    [self setEditing:YES animated:YES];
-
 }
 
 -(void)addItem
@@ -84,19 +77,8 @@ BOOL enableAddItem = YES;
         [self.tableView registerNib:customNib forCellReuseIdentifier:@"CustomCell"];
         [[self tableView] reloadData];
         enableAddItem = NO;
-
     }
-    
-    
 }
-
-//- (BOOL)textFieldShouldReturn:(UITextField *)textField
-//{
-//    [self.view endEditing:YES];
-//    [_list addObject:textField.text];
-//    [[self tableView] reloadData];
-//    return YES;
-//}
 
 - (void)didReceiveMemoryWarning
 {
@@ -126,53 +108,55 @@ BOOL enableAddItem = YES;
             cell =[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:TextCellIdentifier];
         }
         cell.textLabel.text = [_list objectAtIndex:indexPath.row];
-
-        
     }
     else if([[_list objectAtIndex:indexPath.row] isKindOfClass:[UINib class]]){
         static NSString *CellIdentifier = @"CustomCell";
         CustomCell *customCell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier forIndexPath:indexPath];
         customCell.textLabel.text = nil;
         customCell.delegate = self;
+     //   customCell.toDoItem.delegate = self;
         cell = customCell;
-       // cell.textLabel.text = nil;
-        
     }
-    // Configure the cell...
-    
-   // cell.layer.borderColor = [UIColor blueColor].CGColor;
-   // cell.layer.borderWidth = 1;
     return cell;
 }
 
-/*
 // Override to support conditional editing of the table view.
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
 {
     // Return NO if you do not want the specified item to be editable.
-    return YES;
+    if ([[_list objectAtIndex:indexPath.row] isKindOfClass:[UINib class]]) {
+        return NO;
+    }
+    else{
+        return YES;
+    }
 }
-*/
 
 // Override to support editing the table view.
  - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
      [tableView beginUpdates];
      NSUInteger row = [indexPath row];
-     if (editingStyle == UITableViewCellEditingStyleDelete && [[_list objectAtIndex:indexPath.row] isKindOfClass:[NSString class]]) {
+     if (editingStyle == UITableViewCellEditingStyleDelete) {
          // Delete the row
          [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationTop];
          [_list removeObjectAtIndex:row];
+         [NSKeyedArchiver archiveRootObject:_list toFile:_filePath];
      }
      [tableView reloadData];
      [tableView endUpdates];
  }
 
-/*
+
 // Override to support rearranging the table view.
 - (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath
 {
+    NSString *stringToMove = [_list objectAtIndex:fromIndexPath.row];
+    [_list removeObjectAtIndex:fromIndexPath.row];
+    [_list insertObject:stringToMove atIndex:toIndexPath.row];
+    [NSKeyedArchiver archiveRootObject:_list toFile:_filePath];
+    
 }
-*/
+
 
 /*
 // Override to support conditional rearranging of the table view.
@@ -194,5 +178,7 @@ BOOL enableAddItem = YES;
 }
 
  */
+
+
 
 @end
